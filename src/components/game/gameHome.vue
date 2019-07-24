@@ -5,7 +5,9 @@
       <el-page-header @back="goBack" content="Welcome" class="rightHead"></el-page-header>
     </div>
     <div class="main">
-      <marketGraph></marketGraph>
+      <keep-alive>
+        <marketGraph></marketGraph>
+      </keep-alive>
     </div>
     <div class="footer">
       <div class="tipsMain">
@@ -19,17 +21,7 @@
           </span>
         </div>
       </div>
-      <div class="clientInfo">
-        <h2>用户信息</h2><br/>
-        <label for="bought">期货交易:</label>
-        <el-button id="bought" icon="el-icon-search" type="info" plain>详情</el-button><br/>
-        <label for="usrFund">用户资金：</label>
-        <span id="usrFund">{{usr.remainMoney}}元</span><br/>
-        <label for="benefits">盈亏总数：</label>
-        <span id="benefits">0元</span><br/>
-        <label for="deposit">已购保证金：</label>
-        <span id="deposit">{{usr.deposit}}元</span>
-      </div>
+      <router-view></router-view>
     </div>
   </div>
 </template>
@@ -41,46 +33,42 @@
     data(){
       return {
           logs: this.$store.getters.checkGameLog(),
-          usr: {
-              remainMoney: this.$store.getters.checkRemainMoney(),
-              deposit: this.$store.getters.checkDeposit()
-          }
       }
     },
     watch: {
     },
     methods: {
-      goBack: function () {
-        this.$router.push('/');
-      },
-      curTime () {
-        var date = new Date();
-        var hour = date.getHours();
-        var min = date.getMinutes();
-        var sec = date.getSeconds();
-        return (hour < 10 ? '0' + hour : hour) + ":" + (min < 10 ? '0' + min : min) + ":" + (sec < 10 ? '0' + sec : sec)  + " ";
-      },
-      clearlog: function () {
-        var msg = "确定要清除掉所有提示日志吗？";
-        this.$confirm(msg,'提示',{
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            type: 'warning'
-        }).then(() => {
-            this.$store.commit('clearGameLog');
-            this.$message({
-                type: 'success',
-                message: '你已经成功清除掉提示日志'
+        goBack: function () {
+            this.$router.push('/');
+        },
+        curTime () {
+            var date = new Date();
+            var hour = date.getHours();
+            var min = date.getMinutes();
+            var sec = date.getSeconds();
+            return (hour < 10 ? '0' + hour : hour) + ":" + (min < 10 ? '0' + min : min) + ":" + (sec < 10 ? '0' + sec : sec)  + " ";
+        },
+        clearlog: function () {
+            var msg = "确定要清除掉所有提示日志吗？";
+            this.$confirm(msg,'提示',{
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                type: 'warning'
+            }).then(() => {
+                this.$store.commit('clearGameLog');
+                this.$message({
+                    type: 'success',
+                    message: '你已经成功清除掉提示日志'
+                });
+            }).catch((err) => {
+                console.log(err);
             });
-        }).catch((err) => {
-            console.log(err);
-        });
-      }
+        }
     },
     components: {
       marketGraph
     },
-    mounted() {
+    created() {
       this.$store.commit('setGameLog',{
         time:this.curTime(),
         content: "欢迎来到期货交易游戏"
@@ -142,5 +130,22 @@
     float: right;
     background: dodgerblue;
     color: aliceblue;
+  }
+  .usrMainPage{
+    width: 48%;
+    height: inherit;
+    float: right;
+    border-radius: 10px;
+    border: 1px solid black;
+    background: dodgerblue;
+    overflow: scroll;
+  }
+  .usrOperPage{
+    width: 48%;
+    height: inherit;
+    border-radius: 10px;
+    float: right;
+    overflow: scroll;
+    background: aliceblue;
   }
 </style>

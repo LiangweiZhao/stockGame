@@ -22,6 +22,8 @@ import guidePage from '@/components/guide/guide';
   用户
  */
 import usr from '@/components/usrInfo/usrMainPage';
+import usrBrief from '@/components/usrInfo/usrInfoBrief';
+
 Vue.use(Router);
 
 export default new Router({
@@ -29,7 +31,7 @@ export default new Router({
     {
       path: '/',
       name: 'welcomePage',
-      component: welcome
+      component: welcome,
     },
     {
       path: '/gameCenter',
@@ -39,12 +41,24 @@ export default new Router({
         {
           path: '/',
           name: 'gameHomePage',
-          component: gameHomePage
-        },
-        {
-          path: 'usrOperPage/:mode',
-          name: 'usrOperPage',
-          component: usrOperPage
+          component: gameHomePage,
+          children: [
+            {
+              path: '/',
+              name: 'usrInfoBrief',
+              component: usrBrief,
+            },
+            {
+              path: 'usrOperPage/:mode',
+              name: 'usrOperPage',
+              component: usrOperPage
+            },
+            {
+              path: 'usr',
+              name: 'usrPage',
+              component: usr
+            }
+          ]
         }
       ]
     },
@@ -52,11 +66,6 @@ export default new Router({
       path: '/guidePage',
       name: 'guide',
       component: guidePage
-    },
-    {
-      path: '/usr',
-      name: 'usrPage',
-      component: usr
     }
   ]
 })

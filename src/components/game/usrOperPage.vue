@@ -1,13 +1,13 @@
 <template>
-  <div class="gameCenter">
+  <div class="usrOperPage">
       <div class="headerGuide">
-        <h1 class="leftHead">游戏交易用户操作界面 --- {{mode}}</h1>
-        <el-page-header @back="goBack" content="Welcome" class="rightHead"></el-page-header>
+        <h2 class="leftHead">游戏交易用户操作界面 --- {{mode}}</h2>
+        <el-page-header @back="goBack" class="rightHead"></el-page-header>
       </div>
       <div class="bodyPart">
           <el-form :model="submitVal" :rules="rule" ref="transForm" class="form">
               <el-row class="row">
-                    <el-col :lg='6' :sm='24' :offset="2">
+                    <el-col>
                         <el-form-item label="期货名称" prop="future">
                           <el-select v-model="submitVal.future" clearable>
                             <el-option
@@ -19,7 +19,9 @@
                           </el-select>
                         </el-form-item>
                     </el-col>
-                  <el-col :lg='6' :sm='24' :offset="4">
+              </el-row>
+                <el-row class="row">
+                  <el-col>
                       <el-form-item label="买卖方向">
                           <el-select v-model="submitVal.direction" disabled>
                             <el-option
@@ -33,12 +35,14 @@
                   </el-col>
               </el-row>
             <el-row class="row">
-                <el-col :lg='6' :sm='24' :offset="2">
+                <el-col>
                   <el-form-item label="交易数量" prop="orderVol">
                     <el-input v-model="submitVal.orderVol"></el-input>
                   </el-form-item>
                 </el-col>
-                <el-col :lg='6' :sm='24' :offset="4">
+            </el-row>
+            <el-row class="row">
+                <el-col>
                   <el-form-item label="交易价格" prop="orderPrice">
                     <el-input v-model="submitVal.orderPrice"></el-input>
                   </el-form-item>
@@ -118,6 +122,9 @@
                                   type: 'error',
                                   message: this.$store.getters.checkErrorMessage()
                                 });
+                                this.$store.commit('setGameLog',{time:this.$store.getters.checkCurTime(),content:'交易失败!原因:您的资金不够!'})
+                            }else{
+                                this.$store.commit('setGameLog',{time:this.$store.getters.checkCurTime(),content:'交易失败!原因:您的资金不够!'})
                             }
                             this.$router.push('/gameCenter');
                         })
@@ -136,7 +143,9 @@
     overflow: hidden;
     margin-bottom: 20px;
     padding: 15px;
-    background: aliceblue;
+    background: dodgerblue;
+    color: white;
+    border-radius: 10px;
   }
   .leftHead{
     margin: 0;
@@ -152,7 +161,7 @@
     border: 1px solid silver;
     border-radius: 10px;
     padding: 10px;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     background: #fafafa;
   }
   .form{
@@ -160,5 +169,7 @@
   }
   .btns{
     float: right;
+    margin-right: 5px;
+    margin-bottom: 5px;
   }
 </style>

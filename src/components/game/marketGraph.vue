@@ -9,8 +9,10 @@
               <span><b>开盘价: </b>{{marketInfo.startPrice || '-'}}</span><br/>
               <span><b>当前价格: </b>{{marketInfo.curPrice || '-'}}</span><br/>
               <span><b>涨跌幅: </b>{{marketInfo.curPrice ? `${Number((marketInfo.curPrice - marketInfo.startPrice)/marketInfo.startPrice*100).toFixed(2)}%` : '-'}}</span><br/>
-              <span style="color: red;"><b>当次最高价: </b>{{marketInfo.todayPriceH || '-'}}</span><br/>
-              <span style="color: green"><b>当次最低价: </b>{{marketInfo.todayPriceL || '-'}}</span><br/>
+              <span style="color: red;"><b>当局最高价: </b>{{marketInfo.todayPriceH || '-'}}</span><br/>
+              <span style="color: green"><b>当局最低价: </b>{{marketInfo.todayPriceL || '-'}}</span><br/>
+              <span><b>上局开盘价: </b>{{marketInfo.yesStartPrice || '-'}}</span><br/>
+              <span><b>上局收盘价: </b>{{marketInfo.yesLastPrice || '-'}}</span><br/>
           </div>
           <div class="riskControl">
             <label for="riskCircle">风控圈</label><br/>
@@ -26,12 +28,12 @@
           </div><br/>
           <div id="timeSet">
             <label>时间设置</label><br/>
-            <input type="number" v-model="remMin"/>分<input type="number" v-model="remSec"/>秒<br/>
+            <input type="number" v-model="remMin" :disabled="running"/>分<input type="number" v-model="remSec" :disabled="running"/>秒<br/>
           </div>
           <div id="speedControl">
             <span class="demonstration">调节时间速度-倍率:{{speed.time/50}}</span>
             <el-slider v-model="speed.time"></el-slider><br/>
-            <span class="demonstration">波动浮动调节-倍率:{{speed.rate/50}}</span>
+            <span class="demonstration">波动浮动调节-倍率:{{Math.pow(speed.rate/50,2).toFixed(2)}}</span>
             <el-slider v-model="speed.rate"></el-slider><br/>
           </div>
           <el-button type="success" @click="start">开始</el-button>
@@ -66,10 +68,11 @@
                 myChart: {},
                 now : 0,
                 oneDay : 1,
-                value : Math.random() * 1000,
+                value : 0,
                 running: false,
-                remMin: 10,
-                remSec: 10,
+                remMin: 5,
+                remSec: 0,
+                interval: '',
                 speed: {
                     time: 50,
                     rate: 50
@@ -79,6 +82,8 @@
                     todayPriceH: '',
                     todayPriceL: '',
                     curPrice: '',
+                    yesStartPrice: '',
+                    yesLastPrice: '',
                     round: 1,
                 },
                 buttonState:{
@@ -99,8 +104,8 @@
             }
         },
         watch: {
-            "risk.percent": function () {
-                if(this.risk.percent > 60){
+            "risk.percent": function (val) {
+                if(val > 60){
                     this.$store.commit('setGameLog',{time:this.curTime(),content:`您的占用资金已经达到60%,请注意风险！`})
                 }
             }
@@ -167,9 +172,20 @@
                 }
                 this.$store.commit('setGameLog',{time:this.curTime(),content:`游戏开始！时间为${this.remMin}分${this.remSec}秒,第${this.marketInfo.round}轮!祝你好运～`});
                 this.running = true;
+                this.value = this.value || Math.random() * 100 + 80;
+                this.marketInfo.todayPriceL = Math.floor(this.value);
+                this.marketInfo.todayPriceH = Math.floor(this.value);
+                this.marketInfo.startPrice = Math.floor(this.value);
+                var now = this.now;
+                var data = this.data;
+                var oneDay = this.oneDay;
+                var value = this.value;
+                this.value = 0;
+                var self = this;
+
                 function randomData() {
                   now = now + oneDay;
-                  value = value + (Math.random() - 0.5 > 0 ? 1 : -1) * self.marketInfo.startPrice*0.005 * (self.speed.rate/50);
+                  value = value + (Math.random() - 0.5 > 0 ? 1 : -1) * self.marketInfo.startPrice*0.005 * (Math.pow(self.speed.rate/50,2));
                   if(Math.abs(value - self.marketInfo.startPrice)/self.marketInfo.startPrice >= 0.1){
                       value = value > self.marketInfo.startPrice ? self.marketInfo.startPrice*1.1 : self.marketInfo.startPrice*0.9;
                   }
@@ -180,11 +196,7 @@
                     ]
                   }
                 }
-                var now = this.now;
-                var data = this.data;
-                var oneDay = this.oneDay;
-                var value = this.value;
-                var self = this;
+
                 var option = {
                     xAxis: {
                       min: `0/0`,
@@ -203,10 +215,11 @@
                     }]
                 };
 
-                var interval = setInterval(function () {
+                this.interval = setInterval(function () {
                   if(self.remMin === 0 && self.remSec === 0){
                       self.end(1);
-                      clearInterval(interval);
+                      clearInterval(self.interval);
+                      return;
                   }
                   //for (var i = 0; i < 5; i++) {
                     //data.shift();
@@ -222,17 +235,25 @@
 
             },
             end: function(i) {
-                if(i === 1 && !this.running) return;
                 if(!this.running){
                     this.$store.commit('setGameLog',{time:this.curTime(),content:`请先开始游戏！`});
                     return;
                 }
-                this.running = false;
-                this.$store.commit('setGameLog',{time:this.curTime(),content:`本轮游戏结束！`});
-                this.remMin = 0;
-                this.remSec = 0;
-                this.data = [];
-                this.marketInfo.round ++;
+                if(i !== 1){
+                    this.$confirm("是否提前结束游戏？","提示",{
+                      confirmButtonText: '确定',
+                      cancelButtonText: '取消',
+                      type: 'warning'
+                    }).then(() => {
+                        clearInterval(this.interval);
+                        this.reset();
+                    }).catch((err) => {
+                      console.log(err);
+                    });
+                }else{
+                    this.reset();
+                }
+                this.$store.commit('setLastPrice',{id:0,lastPrice:this.value});
             },
             curTime () {
               var date = new Date();
@@ -256,12 +277,25 @@
             },
             operation: function (mode) {
                 this.$router.push('/gameCenter/usrOperPage/' + mode);
+            },
+            reset: function () {
+                this.running = false;
+                this.$store.commit('setGameLog',{time:this.curTime(),content:`本轮游戏结束! 本轮成交价为${this.marketInfo.curPrice}`});
+                this.remMin = 0;
+                this.remSec = 0;
+                this.data = [];
+                this.marketInfo.round ++;
+                this.marketInfo.todayPriceH = '';
+                this.value = this.marketInfo.curPrice;
+                this.marketInfo.yesLastPrice = this.value;
+                this.marketInfo.curPrice = '';
+                this.marketInfo.todayPriceL = '';
+                this.marketInfo.yesStartPrice = this.marketInfo.startPrice;
+                this.marketInfo.startPrice = '';
             }
         },
         mounted: function () {
             this.draw();
-            this.marketInfo.startPrice = Math.floor(this.value);
-            this.marketInfo.todayPriceL = Math.floor(this.value);
             this.data.push({name:'0',value:['0/0',this.marketInfo.startPrice]});
         }
     }
