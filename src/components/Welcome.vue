@@ -23,7 +23,11 @@ export default {
     },
     toGuide: function () {
       this.$router.push('/guidePage')
-    }
+    },
+  },
+  mounted: function () {
+      this.$store.state.data = [];
+      this.$store.state.log.gameLog = [];
   }
 }
 </script>
