@@ -6,10 +6,12 @@ const store = new Vuex.Store({
     state : {
         data: [[],[]],
         usr: {
-            remainMoney: 10000,
+            remainMoney: 100000,
             deposit: 0,
             benefit: 0,
+            remainPay: 0,
             boughtList: [],
+            positions: [],
             soldList: []
         },
         futures: {
@@ -33,6 +35,11 @@ const store = new Vuex.Store({
         checkRemainMoney: function (state) {
             return function () {
                 return state.usr.remainMoney;
+            };
+        },
+        checkRemainPay: function (state) {
+            return function () {
+                return state.usr.remainPay;
             };
         },
         checkDeposit: function (state) {
@@ -65,6 +72,11 @@ const store = new Vuex.Store({
                 return state.usr.boughtList;
             }
         },
+        checkPosList: function (state) {
+            return function () {
+                return state.usr.positions;
+            }
+        },
         checkSoldList: function (state) {
             return function () {
                 return state.usr.soldList;
@@ -93,28 +105,36 @@ const store = new Vuex.Store({
             return function (id) {
                 return state.futures.lastPrice[id];
             }
+        },
+        checkBenefit: function (state) {
+          return function () {
+            return state.usr.benefit;
+          }
         }
     },
     mutations: {
         transRequest: function (state,params) {
             state.error.errorMes = '';
             state.error.errorCode = '';
-            let transDeposit = +params.orderPrice * +params.orderVol * state.futures.depositRate;
+            let transDeposit = +params.orderPrice * +params.orderVol * state.futures.eachOrderVal * state.futures.depositRate;
             if(transDeposit > state.usr.remainMoney){
                 state.error.errorMes = "资金不足，交易失败！";
                 state.error.errorCode = -1;
                 return;
             }
+            params.id = state.futures.allKinds[params.future].id;
+            params.futureName = state.futures.allKinds[params.future].name;
+            state.usr.remainMoney -= transDeposit;
+            state.usr.deposit += transDeposit;
+            if(!state.usr.positions[params.id]){
+                state.usr.positions[params.id] = {id:params.id,futureName: params.futureName,position: 0}
+            }
             if(params.direction){
-                params.id = state.futures.allKinds[params.future].id;
-                params.futureName = state.futures.allKinds[params.future].name;
                 state.usr.soldList.push(params);
+                state.usr.positions[params.id].position -= +params.orderVol;
             }else{
-                params.id = state.futures.allKinds[params.future].id;
-                params.futureName = state.futures.allKinds[params.future].name;
-                state.usr.remainMoney -= transDeposit;
-                state.usr.deposit += transDeposit;
                 state.usr.boughtList.push(params);
+                state.usr.positions[params.id].position += +params.orderVol;
             }
         },
         setGameLog: function (state, params) {
@@ -123,21 +143,23 @@ const store = new Vuex.Store({
         clearGameLog: function (state) {
             state.log.gameLog.splice(0,state.log.gameLog.length);
         },
-        setLastPrice: function (state, params){
-            state.futures.lastPrice[params.id] = params.lastPrice;
-            this.balance(params.lastPrice);
-            console.log(this.state.usr.benefit);
+        clearData: function (state) {
+            state.data.splice(0,state.data.length);
         },
-        balance: function (lastPrice) {
-            var sum = 0;
-            for(let item in state.usr.boughtList){
-                sum += (lastPrice - item.orderPrice) * item.orderVol * this.state.futures.eachOrderVal;
-            }
-            for(let item in state.usr.soldList){
-                sum += (item.orderPrice - lastPrice) * item.orderVol * this.state.futures.eachOrderVal;
-            }
+        setLastPrice: function (state, params){
+            console.log(params);
+            var sum = 0,lastPrice = +params.lastPrice;
+            state.futures.lastPrice[params.id] = lastPrice;
+            state.usr.boughtList.map((item) => {
+                sum += (lastPrice - +item.orderPrice) * +item.orderVol * +state.futures.eachOrderVal;
+            });
+            state.usr.soldList.map((item) => {
+                sum += (+item.orderPrice - lastPrice) * +item.orderVol * +state.futures.eachOrderVal;
+            });
+
             this.state.usr.benefit += sum;
-        }
+            console.log(state.usr.benefit);
+        },
     }
 });
 

@@ -26,8 +26,8 @@ export default {
     },
   },
   mounted: function () {
-      this.$store.state.data = [];
-      this.$store.state.log.gameLog = [];
+      this.$store.commit('clearData');
+      this.$store.commit('clearGameLog');
   }
 }
 </script>

@@ -124,7 +124,11 @@
                                 });
                                 this.$store.commit('setGameLog',{time:this.$store.getters.checkCurTime(),content:'交易失败!原因:您的资金不够!'})
                             }else{
-                                this.$store.commit('setGameLog',{time:this.$store.getters.checkCurTime(),content:'交易失败!原因:您的资金不够!'})
+                                this.$store.commit('setGameLog',
+                                  {
+                                    time:this.$store.getters.checkCurTime(),
+                                    content:`您已经以${this.submitVal.orderPrice}元的价格${this.submitVal.direction == 0 ?  '购买了' : '卖了'}${this.submitVal.orderVol}手的${this.submitVal.future == '0' ? '期货A' : '期货B'}!`
+                                  })
                             }
                             this.$router.push('/gameCenter');
                         })

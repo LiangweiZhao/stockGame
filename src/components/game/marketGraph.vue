@@ -16,7 +16,7 @@
           </div>
           <div class="riskControl">
             <label for="riskCircle">风控圈</label><br/>
-            <el-progress id="riskCircle" type="circle" :percentage="risk.percent" :color="risk.colors"></el-progress>
+            <el-progress id="riskCircle" type="circle" :percentage="riskPercent" :color="risk.colors"></el-progress>
           </div>
       </div>
       <div class="funcs">
@@ -91,7 +91,6 @@
                 },
                 risk: {
                     status: "",
-                    percent: Math.round(this.$store.getters.checkDeposit()/(this.$store.getters.checkRemainMoney()+this.$store.getters.checkDeposit()) * 100),
                     text: "危险",
                     limit: 0.1,
                     colors: [
@@ -111,9 +110,9 @@
             }
         },
         computed: {
-            remRound: {
+            riskPercent: {
                 get: function () {
-                    return 3 - this.marketInfo.round;
+                    return Math.round(this.$store.getters.checkDeposit()/(this.$store.getters.checkRemainMoney()+this.$store.getters.checkDeposit()) * 100);
                 }
             }
         },
@@ -141,7 +140,7 @@
                         }
                     },
                     xAxis: {
-                        type: 'category',
+                        type: 'value',
                         splitLine: {
                           show: true
                         }
@@ -182,6 +181,8 @@
                 var value = this.value;
                 this.value = 0;
                 var self = this;
+                var startTime = new Date();
+                data.push({name:0,value:[0,Math.round(value)]});
 
                 function randomData() {
                   now = now + oneDay;
@@ -192,15 +193,17 @@
                   return {
                     name: now,
                     value: [
-                      `${Math.floor(now/60)}/${now%60}`, Math.round(value)
+                      //`${Math.floor(now/60)}:${now%60}`, Math.round(value)
+                      now, Math.round(value)
                     ]
                   }
                 }
 
                 var option = {
                     xAxis: {
-                      min: `0/0`,
-                      max: `${this.remMin}/${this.remSec}`
+                      min: 0,
+                      //max: `${this.remMin}:${this.remSec}`
+                      max: this.remMin * 60 + this.remSec
                     },
                     yAxis: {
                       min: Math.round(this.marketInfo.startPrice*0.88),
@@ -247,13 +250,14 @@
                     }).then(() => {
                         clearInterval(this.interval);
                         this.reset();
+                        this.$store.commit('setLastPrice',{id:0,lastPrice:this.value});
                     }).catch((err) => {
                       console.log(err);
                     });
                 }else{
                     this.reset();
+                    this.$store.commit('setLastPrice',{id:0,lastPrice:this.value});
                 }
-                this.$store.commit('setLastPrice',{id:0,lastPrice:this.value});
             },
             curTime () {
               var date = new Date();

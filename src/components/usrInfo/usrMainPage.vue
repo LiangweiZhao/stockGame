@@ -5,11 +5,33 @@
             <el-page-header @back="goBack" class="rightHead"></el-page-header>
         </div>
         <div class="bodyPart">
-          <span>可用资产: <b>{{usr.remainMoney}}</b></span>&nbsp;&nbsp;
-          <span>保证金总数: <b>{{usr.deposit}}</b></span>
+          <span>可用保证金: <b>{{usr.remainMoney}}</b></span>&nbsp;&nbsp;
+          <span>已交保证金: <b>{{usr.deposit}}</b></span>
         </div>
 
         <div>
+          <div class="position">
+            <el-tag type="info" style="margin-top: 10px">持仓情况</el-tag>
+            <el-table
+              :data="usr.positions"
+              stripe>
+              <el-table-column
+                type="index">
+              </el-table-column>
+              <el-table-column
+                prop="id"
+                label="期货ID">
+              </el-table-column>
+              <el-table-column
+                prop="futureName"
+                label="期货名称">
+              </el-table-column>
+              <el-table-column
+                prop="position"
+                label="持仓情况(负数代表卖持仓)">
+              </el-table-column>
+            </el-table>
+          </div>
           <div class="bought">
             <el-tag type="danger" style="margin-top: 10px">买入期货表</el-tag>
             <el-table
@@ -77,7 +99,8 @@
                     remainMoney: this.$store.getters.checkRemainMoney(),
                     deposit: this.$store.getters.checkDeposit(),
                     boughtList: [],
-                    soldList: []
+                    soldList: [],
+                    positions: ''
                 },
                 futures:{
                     lastPrice: []
@@ -92,6 +115,7 @@
         created: function () {
             this.usr.boughtList = this.$store.getters.checkBoughtList();
             this.usr.soldList = this.$store.getters.checkSoldList();
+            this.usr.positions = this.$store.getters.checkPosList();
             //for
         }
     }
