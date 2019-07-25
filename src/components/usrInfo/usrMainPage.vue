@@ -27,8 +27,20 @@
                 label="期货名称">
               </el-table-column>
               <el-table-column
-                prop="position"
-                label="持仓情况(负数代表卖持仓)">
+                prop="positionBuy"
+                label="买持仓">
+              </el-table-column>
+              <el-table-column
+                prop="positionLastBuy"
+                label="昨日买持仓">
+              </el-table-column>
+              <el-table-column
+                prop="positionSell"
+                label="卖持仓">
+              </el-table-column>
+              <el-table-column
+                prop="positionLastSell"
+                label="昨日卖持仓">
               </el-table-column>
             </el-table>
           </div>
@@ -56,6 +68,10 @@
                 prop="orderVol"
                 label="购买数量">
               </el-table-column>
+              <el-table-column
+                prop="round"
+                label="购买轮次">
+              </el-table-column>
             </el-table>
           </div>
 
@@ -82,6 +98,10 @@
               <el-table-column
                 prop="orderVol"
                 label="卖出数量">
+              </el-table-column>
+              <el-table-column
+                prop="round"
+                label="卖出轮次">
               </el-table-column>
             </el-table>
           </div>

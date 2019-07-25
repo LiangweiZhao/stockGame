@@ -112,7 +112,7 @@
         computed: {
             riskPercent: {
                 get: function () {
-                    return Math.round(this.$store.getters.checkDeposit()/(this.$store.getters.checkRemainMoney()+this.$store.getters.checkDeposit()) * 100);
+                    return Math.round(this.$store.getters.checkDeposit()/(this.$store.getters.checkRemainMoney()) * 100);
                 }
             }
         },
@@ -249,14 +249,14 @@
                       type: 'warning'
                     }).then(() => {
                         clearInterval(this.interval);
+                        this.$store.commit('setLastPrice',{id:0,lastPrice:this.marketInfo.curPrice,startPrice:this.marketInfo.startPrice});
                         this.reset();
-                        this.$store.commit('setLastPrice',{id:0,lastPrice:this.value});
                     }).catch((err) => {
                       console.log(err);
                     });
                 }else{
+                    this.$store.commit('setLastPrice',{id:0,lastPrice:this.marketInfo.curPrice,startPrice:this.marketInfo.startPrice});
                     this.reset();
-                    this.$store.commit('setLastPrice',{id:0,lastPrice:this.value});
                 }
             },
             curTime () {

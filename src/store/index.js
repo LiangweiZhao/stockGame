@@ -5,6 +5,7 @@ Vue.use(Vuex);
 const store = new Vuex.Store({
     state : {
         data: [[],[]],
+        round: 1,
         usr: {
             remainMoney: 100000,
             deposit: 0,
@@ -116,25 +117,29 @@ const store = new Vuex.Store({
         transRequest: function (state,params) {
             state.error.errorMes = '';
             state.error.errorCode = '';
-            let transDeposit = +params.orderPrice * +params.orderVol * state.futures.eachOrderVal * state.futures.depositRate;
-            if(transDeposit > state.usr.remainMoney){
-                state.error.errorMes = "资金不足，交易失败！";
-                state.error.errorCode = -1;
-                return;
-            }
+            //资金情况判断
+            // let transDeposit = +params.orderPrice * +params.orderVol * state.futures.eachOrderVal * state.futures.depositRate;
+            // if(transDeposit > state.usr.remainMoney){
+            //     state.error.errorMes = "资金不足，交易失败！";
+            //     state.error.errorCode = -1;
+            //     return;
+            // }
             params.id = state.futures.allKinds[params.future].id;
             params.futureName = state.futures.allKinds[params.future].name;
-            state.usr.remainMoney -= transDeposit;
-            state.usr.deposit += transDeposit;
+            params.round = state.round;
+            //state.usr.remainMoney -= transDeposit;
+            //state.usr.deposit += transDeposit;
+
+            //持仓管理部分
             if(!state.usr.positions[params.id]){
-                state.usr.positions[params.id] = {id:params.id,futureName: params.futureName,position: 0}
+                state.usr.positions[params.id] = {id:params.id,futureName: params.futureName,positionSell: 0,positionBuy: 0,positionLastSell: 0,positionLastBuy: 0,positionTotal: 0}
             }
             if(params.direction){
                 state.usr.soldList.push(params);
-                state.usr.positions[params.id].position -= +params.orderVol;
+                state.usr.positions[params.id].positionSell += +params.orderVol;
             }else{
                 state.usr.boughtList.push(params);
-                state.usr.positions[params.id].position += +params.orderVol;
+                state.usr.positions[params.id].positionBuy += +params.orderVol;
             }
         },
         setGameLog: function (state, params) {
@@ -148,17 +153,34 @@ const store = new Vuex.Store({
         },
         setLastPrice: function (state, params){
             console.log(params);
-            var sum = 0,lastPrice = +params.lastPrice;
+            var sum = 0,lastPrice = +params.lastPrice, newAddedDeposit = 0;
             state.futures.lastPrice[params.id] = lastPrice;
+            //结算当日 更新保证金
             state.usr.boughtList.map((item) => {
-                sum += (lastPrice - +item.orderPrice) * +item.orderVol * +state.futures.eachOrderVal;
+                if(state.round === item.round){
+                    sum += (lastPrice - +item.orderPrice) * +item.orderVol * +state.futures.eachOrderVal;
+                }
             });
             state.usr.soldList.map((item) => {
-                sum += (+item.orderPrice - lastPrice) * +item.orderVol * +state.futures.eachOrderVal;
+                if(state.round === item.round){
+                    sum += (+item.orderPrice - lastPrice) * +item.orderVol * +state.futures.eachOrderVal;
+                }
             });
-
-            this.state.usr.benefit += sum;
-            console.log(state.usr.benefit);
+            //结算上一日
+            let posInfo = state.usr.positions[params.id];
+            sum += (+params.startPrice - +params.lastPrice ) * (posInfo.positionLastSell - posInfo.positionLastBuy);
+            state.usr.benefit = sum;
+            //更新当日为上一日
+            posInfo.positionTotal += posInfo.positionBuy - posInfo.positionSell;
+            posInfo.positionLastSell = posInfo.positionSell;
+            posInfo.positionLastBuy = posInfo.positionBuy;
+            posInfo.positionBuy = 0;
+            posInfo.positionSell = 0;
+            //准备金余额
+            state.usr.remainMoney += sum + state.usr.deposit;
+            state.usr.deposit = (+posInfo.positionTotal) * +state.futures.eachOrderVal * lastPrice * +state.futures.depositRate;
+            state.usr.remainMoney -= state.usr.deposit;
+            state.round ++;
         },
     }
 });
